@@ -20,7 +20,7 @@ Demo:
 ```bash
 # Install
 curl -LsSf https://astral.sh/uv/install.sh | sh
-git clone https://github.com/bartolli/mcp-llm-bridge.git
+git clone https://github.com/mmakam2/mcp-llm-bridge.git
 cd mcp-llm-bridge
 uv venv
 source .venv/bin/activate
