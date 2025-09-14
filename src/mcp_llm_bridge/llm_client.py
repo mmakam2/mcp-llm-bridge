@@ -27,17 +27,27 @@ logger.setLevel(logging.INFO)
 
 class LLMResponse:
     """Standardized response format focusing on tool handling"""
+
     def __init__(self, completion: Any):
         self.completion = completion
-        self.choice = completion.choices[0]
+
+        # Handle cases where the completion or its choices may be missing
+        choices = getattr(completion, "choices", None)
+        if not choices:
+            logger.error("Completion did not contain any choices: %s", completion)
+            raise ValueError("LLM response missing choices")
+
+        self.choice = choices[0]
         self.message = self.choice.message
-        self.stop_reason = self.choice.finish_reason
+        self.stop_reason = getattr(self.choice, "finish_reason", None)
         self.is_tool_call = self.stop_reason == "tool_calls"
-        
+
         # Format content for bridge compatibility
         self.content = self.message.content if self.message.content is not None else ""
-        self.tool_calls = self.message.tool_calls if hasattr(self.message, "tool_calls") else None
-        
+        self.tool_calls = (
+            self.message.tool_calls if hasattr(self.message, "tool_calls") else None
+        )
+
         # Debug logging
         logger.debug(f"Raw completion: {completion}")
         logger.debug(f"Message content: {self.content}")
