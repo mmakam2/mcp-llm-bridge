@@ -1,6 +1,7 @@
 # src/mcp_llm_bridge/main.py
-import os
 import asyncio
+import json
+import argparse
 from dotenv import load_dotenv
 from mcp import StdioServerParameters
 from mcp_llm_bridge.config import BridgeConfig, LLMConfig
@@ -29,35 +30,37 @@ logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
 async def main():
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Run MCP-LLM bridge")
+    parser.add_argument(
+        "--params",
+        default="params.json",
+        help="Path to JSON parameter file",
+    )
+    args = parser.parse_args()
+
     # Load environment variables
     load_dotenv()
 
-    # Get the project root directory (where test.db is located)
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    db_path = os.path.join(project_root, "test.db")
-    
-    # Configure bridge
+    # Load configuration from parameter file
+    with open(args.params) as f:
+        params = json.load(f)
+
+    llm_cfg = LLMConfig(**params["llm_config"])
+
+    server_params = None
+    if params.get("mcp_server_params"):
+        server_params = StdioServerParameters(**params["mcp_server_params"])
+
     config = BridgeConfig(
-        mcp_server_params=StdioServerParameters(
-            command="uvx",
-            args=["mcp-server-sqlite", "--db-path", db_path],
-            env=None
-        ),
-        # llm_config=LLMConfig(
-        #     api_key=os.getenv("OPENAI_API_KEY"),
-        #     model=os.getenv("OPENAI_MODEL", "gpt-4o"),
-        #     base_url=None
-        # ),
-        llm_config=LLMConfig(
-            api_key="ollama",  # Can be any string for local testing
-            model="mistral-nemo:12b-instruct-2407-q8_0",
-            base_url="http://localhost:11434/v1"  # Point to your local model's endpoint
-        ),
-        system_prompt="You are a helpful assistant that can use tools to help answer questions."
+        llm_config=llm_cfg,
+        mcp_server_params=server_params,
+        mcp_sse_url=params.get("mcp_sse_url"),
+        mcp_sse_api_key=params.get("mcp_sse_api_key"),
+        system_prompt=params.get("system_prompt"),
     )
-    
+
     logger.info(f"Starting bridge with model: {config.llm_config.model}")
-    logger.info(f"Using database at: {db_path}")
     
     # Use bridge with context manager
     async with BridgeManager(config) as bridge:

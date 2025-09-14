@@ -60,6 +60,30 @@ config = BridgeConfig(
 )
 ```
 
+#### Using `mcp-proxy` over SSE
+
+When connecting through an HTTP proxy that exposes an MCP server via Server-Sent Events, provide the proxy URL and optional API key instead of `mcp_server_params`:
+
+```python
+config = BridgeConfig(
+    llm_config=LLMConfig(
+        api_key=os.getenv("OPENAI_API_KEY"),
+        model=os.getenv("OPENAI_MODEL", "gpt-4o"),
+        base_url=None,
+    ),
+    mcp_sse_url="http://localhost:3000/sse",
+    mcp_sse_api_key="your-mcp-api-key"
+)
+```
+
+#### Parameter File
+
+Configuration can also be supplied via a JSON parameter file. Copy `params.example.json` to `params.json`, adjust values for your LLM (e.g. LM Studio), MCP settings, and system prompt, then run:
+
+```bash
+python -m mcp_llm_bridge.main --params params.json
+```
+
 ### Additional Endpoint Support
 
 The bridge also works with any endpoint implementing the OpenAI API specification:
@@ -91,7 +115,7 @@ I didn't test this, but it should work.
 ## Usage
 
 ```bash
-python -m mcp_llm_bridge.main
+python -m mcp_llm_bridge.main --params params.json
 
 # Try: "What are the most expensive products in the database?"
 # Exit with 'quit' or Ctrl+C

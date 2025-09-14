@@ -1,8 +1,9 @@
 # src/mcp_llm_bridge/mcp_client.py
 import logging
-from typing import Any, List
+from typing import Any, List, Optional
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+from mcp.client.sse import sse_client
 import colorlog
 
 handler = colorlog.StreamHandler()
@@ -27,9 +28,19 @@ logger.setLevel(logging.INFO)
 
 class MCPClient:
     """Client for interacting with MCP servers"""
-    
-    def __init__(self, server_params: StdioServerParameters):
+
+    def __init__(
+        self,
+        server_params: Optional[StdioServerParameters] = None,
+        sse_url: Optional[str] = None,
+        sse_headers: Optional[dict[str, str]] = None,
+    ):
+        if not server_params and not sse_url:
+            raise ValueError("Either stdio server params or an SSE URL must be provided")
+
         self.server_params = server_params
+        self.sse_url = sse_url
+        self.sse_headers = sse_headers
         self.session = None
         self._client = None
         
@@ -48,7 +59,13 @@ class MCPClient:
     async def connect(self):
         """Establishes connection to MCP server"""
         logger.debug("Connecting to MCP server...")
-        self._client = stdio_client(self.server_params)
+
+        if self.sse_url:
+            logger.debug(f"Using SSE transport to {self.sse_url}")
+            self._client = sse_client(self.sse_url, headers=self.sse_headers)
+        else:
+            logger.debug("Using stdio transport")
+            self._client = stdio_client(self.server_params)
         self.read, self.write = await self._client.__aenter__()
         session = ClientSession(self.read, self.write)
         self.session = await session.__aenter__()
