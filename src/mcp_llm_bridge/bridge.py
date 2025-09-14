@@ -36,7 +36,14 @@ class MCPLLMBridge:
     
     def __init__(self, config: BridgeConfig):
         self.config = config
-        self.mcp_client = MCPClient(config.mcp_server_params)
+        headers = (
+            {"Authorization": f"Bearer {config.mcp_sse_api_key}"}
+            if config.mcp_sse_api_key
+            else None
+        )
+        self.mcp_client = MCPClient(
+            config.mcp_server_params, config.mcp_sse_url, headers
+        )
         self.llm_client = LLMClient(config.llm_config)
         self.query_tool = DatabaseQueryTool("test.db")  # Initialize database query tool
         

@@ -15,6 +15,8 @@ class LLMConfig:
 @dataclass
 class BridgeConfig:
     """Configuration for the MCP-LLM Bridge"""
-    mcp_server_params: StdioServerParameters
     llm_config: LLMConfig
+    mcp_server_params: Optional[StdioServerParameters] = None
+    mcp_sse_url: Optional[str] = None
+    mcp_sse_api_key: Optional[str] = None
     system_prompt: Optional[str] = None
