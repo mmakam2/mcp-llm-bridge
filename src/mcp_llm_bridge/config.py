@@ -1,5 +1,6 @@
 # src/mcp_llm_bridge/config.py
 import json
+import re
 from dataclasses import dataclass
 from typing import Optional
 from mcp import StdioServerParameters
@@ -44,6 +45,26 @@ class BridgeConfig:
         """Load configuration from a JSON file."""
         with open(path, encoding="utf-8") as f:
             raw = f.read()
+
+        # Allow a slightly more relaxed JSON format so users can add
+        # comments or trailing commas in their configuration files.  This
+        # mirrors the flexibility offered by many modern config formats and
+        # prevents confusing ``JSONDecodeError`` messages.
+        #
+        # ``strict=False`` already permits unescaped control characters
+        # (e.g. newlines in strings).  Here we additionally strip
+        # single-line (//) and block (/* */) comments as well as trailing
+        # commas before closing brackets or braces.
+        def _normalize(s: str) -> str:
+            # Remove // comments
+            s = re.sub(r"//.*", "", s)
+            # Remove /* */ comments
+            s = re.sub(r"/\*.*?\*/", "", s, flags=re.DOTALL)
+            # Remove trailing commas
+            s = re.sub(r",(\s*[}\]])", r"\1", s)
+            return s
+
+        raw = _normalize(raw)
         try:
             data = json.loads(raw, strict=False)
         except json.JSONDecodeError as exc:

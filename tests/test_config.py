@@ -8,3 +8,20 @@ Line2"}"""
     path.write_text(params)
     cfg = BridgeConfig.from_file(str(path))
     assert cfg.system_prompt == "Line1\nLine2"
+
+
+def test_from_file_allows_comments_and_trailing_commas(tmp_path):
+    params = """
+    {
+      // Example configuration with comments and trailing commas
+      "llm_config": {
+        "api_key": "k",
+        "model": "m",
+      },
+      "system_prompt": "test",
+    }
+    """
+    path = tmp_path / "params.json"
+    path.write_text(params)
+    cfg = BridgeConfig.from_file(str(path))
+    assert cfg.system_prompt == "test"
