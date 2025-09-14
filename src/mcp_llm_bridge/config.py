@@ -42,6 +42,10 @@ class BridgeConfig:
     @classmethod
     def from_file(cls, path: str) -> "BridgeConfig":
         """Load configuration from a JSON file."""
-        with open(path) as f:
-            data = json.load(f)
+        with open(path, encoding="utf-8") as f:
+            raw = f.read()
+        try:
+            data = json.loads(raw, strict=False)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Invalid JSON configuration in {path}: {exc}") from exc
         return cls.from_dict(data)
