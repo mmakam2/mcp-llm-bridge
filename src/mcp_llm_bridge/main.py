@@ -1,10 +1,8 @@
 # src/mcp_llm_bridge/main.py
 import asyncio
-import json
 import argparse
 from dotenv import load_dotenv
-from mcp import StdioServerParameters
-from mcp_llm_bridge.config import BridgeConfig, LLMConfig
+from mcp_llm_bridge.config import BridgeConfig
 from mcp_llm_bridge.bridge import BridgeManager
 import colorlog
 import logging
@@ -43,22 +41,7 @@ async def main():
     load_dotenv()
 
     # Load configuration from parameter file
-    with open(args.params) as f:
-        params = json.load(f)
-
-    llm_cfg = LLMConfig(**params["llm_config"])
-
-    server_params = None
-    if params.get("mcp_server_params"):
-        server_params = StdioServerParameters(**params["mcp_server_params"])
-
-    config = BridgeConfig(
-        llm_config=llm_cfg,
-        mcp_server_params=server_params,
-        mcp_sse_url=params.get("mcp_sse_url"),
-        mcp_sse_api_key=params.get("mcp_sse_api_key"),
-        system_prompt=params.get("system_prompt"),
-    )
+    config = BridgeConfig.from_file(args.params)
 
     logger.info(f"Starting bridge with model: {config.llm_config.model}")
     

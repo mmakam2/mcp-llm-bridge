@@ -46,4 +46,3 @@ ENV/
 .DS_Store
 
 # Config
-params.json
