@@ -4,6 +4,11 @@ from dataclasses import dataclass
 from typing import Optional
 from mcp import StdioServerParameters
 
+try:  # pragma: no cover - optional dependency
+    import json5  # type: ignore
+except Exception:  # pragma: no cover - narrow scope not required
+    json5 = None
+
 @dataclass
 class LLMConfig:
     """Configuration for LLM client"""
@@ -42,6 +47,13 @@ class BridgeConfig:
     @classmethod
     def from_file(cls, path: str) -> "BridgeConfig":
         """Load configuration from a JSON file."""
-        with open(path) as f:
-            data = json.load(f)
+        with open(path, encoding="utf-8") as f:
+            raw = f.read()
+        try:
+            if json5:
+                data = json5.loads(raw, strict=False)
+            else:
+                data = json.loads(raw, strict=False)
+        except Exception as exc:  # json5 and json raise different exceptions
+            raise ValueError(f"Invalid JSON configuration in {path}: {exc}") from exc
         return cls.from_dict(data)
